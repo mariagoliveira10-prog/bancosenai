@@ -18,9 +18,9 @@ namespace BancoSENAIAPI.Controllers
         [HttpPost("upload/{codigoCliente}")]
         public async Task<IActionResult> AnexarArquivo(int codigoCliente, IFormFile arquivo)
         {
-            if (arquivo == null || arquivo.Length == 0)
+            if (arquivo.Length > 2 * 1024 * 1024)
             {
-                return BadRequest("Nenhum arquivo foi enviado.");
+                return BadRequest("O arquivo não pode ter mais de 2 MB.");
             }
             string pastaCliente = Path.Combine(_caminhoRaiz, codigoCliente.ToString());
             if (!Directory.Exists(pastaCliente))
