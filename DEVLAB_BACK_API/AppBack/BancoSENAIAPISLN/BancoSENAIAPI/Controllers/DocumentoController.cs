@@ -28,6 +28,10 @@ namespace BancoSENAIAPI.Controllers
                 Directory.CreateDirectory(pastaCliente);
             }
             string extensao = Path.GetExtension(arquivo.FileName);
+            if (extensao != ".pdf" && extensao != ".jpg" && extensao != ".png")
+            {
+                return BadRequest("Extensão de arquivo não permitida. Use apenas .pdf, .jpg ou .png.");
+            }
 
             string nameOriginal = Path.GetFileNameWithoutExtension(arquivo.FileName);
             string novoNome = $"{codigoCliente}_{nameOriginal}_{Guid.NewGuid()}{extensao}";
