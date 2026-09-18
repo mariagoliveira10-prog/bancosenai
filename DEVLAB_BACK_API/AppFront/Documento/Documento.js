@@ -1,4 +1,5 @@
 const URL_API = 'https://localhost:7081/api/v1/Documento';
+
 async function enviarDocumento() {
     const codigoCliente = document.getElementById("codigoCliente").value;
     const intputArquivo = document.getElementById("arquivo");
@@ -8,6 +9,7 @@ async function enviarDocumento() {
         alert("Informe o codigo do cliente e selecione um arquivo ");
         return;
     }
+
     const dadosArquivo = new FormData();
     dadosArquivo.append("arquivo", arquivo);
 
@@ -31,12 +33,16 @@ async function buscarDocumentos() {
         alert("Informe o codigo do cliente");
         return;
     }
+
     const response = await fetch(`${URL_API}/listar/${codigoCliente}`, {
         method: "GET"
     });
+
     if (response.ok) {
         const documentos = await response.json();
+
         const tabela = document.getElementById("tabelaDocumentos");
+
         tabela.innerHTML = "";
 
         documentos.forEach(documento => {
@@ -47,13 +53,36 @@ async function buscarDocumentos() {
                 <td>${documento.name}</td>
                 <td>${documento.extensao}</td>
                 <td>
-                    <button>Baixar</button>
+                    <button onclick="baixarDocumento(${documento.id})">Baixar</button>
                     <button>Excluir</button>
-                </td>`
-            ;
+                </td>`;
+
             tabela.appendChild(linha);
         });
     } else {
         alert("Nenhum documento encontrado");
+    }
+}
+
+
+async function baixarDocumento(id) {
+    const response = await fetch(`${URL_API}/download/${id}`);
+
+    if (response.ok) {
+        const arquivo = await response.blob();
+
+        const url = window.URL.createObjectURL(arquivo);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "documento";
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        window.URL.revokeObjectURL(url);
+    } else {
+        alert("Falha ao baixar o arquivo");
     }
 }
