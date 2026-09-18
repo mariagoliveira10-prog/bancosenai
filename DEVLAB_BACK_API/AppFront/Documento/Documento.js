@@ -18,9 +18,42 @@ async function enviarDocumento() {
 
     if (response.ok) {
         alert("Documento enviado com sucesso!");
-        document.getElementById("codigoCliente").value = " ";
-        document.getElementById("arquivo").value = " ";
+        document.getElementById("codigoCliente").value = "";
+        document.getElementById("arquivo").value = "";
     } else {
         alert("Falha ao enviar o arquivo");
+    }
+}
+async function buscarDocumentos() {
+    const codigoCliente = document.getElementById("codigoBusca").value;
+
+    if (!codigoCliente) {
+        alert("Informe o codigo do cliente");
+        return;
+    }
+    const response = await fetch(`${URL_API}/listar/${codigoCliente}`, {
+        method: "GET"
+    });
+    if (response.ok) {
+        const documentos = await response.json();
+        const tabela = document.getElementById("tabelaDocumentos");
+        tabela.innerHTML = "";
+
+        documentos.forEach(documento => {
+            const linha = document.createElement("tr");
+
+            linha.innerHTML =
+                `<td>${documento.id}</td>
+                <td>${documento.name}</td>
+                <td>${documento.extensao}</td>
+                <td>
+                    <button>Baixar</button>
+                    <button>Excluir</button>
+                </td>`
+            ;
+            tabela.appendChild(linha);
+        });
+    } else {
+        alert("Nenhum documento encontrado");
     }
 }
