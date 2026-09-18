@@ -20,6 +20,11 @@ async function enviarDocumento() {
 
     if (response.ok) {
         alert("Documento enviado com sucesso!");
+
+        document.getElementById("codigoBusca").value = codigoCliente;
+
+        await buscarDocumentos();
+
         document.getElementById("codigoCliente").value = "";
         document.getElementById("arquivo").value = "";
     } else {
