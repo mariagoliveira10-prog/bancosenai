@@ -26,6 +26,8 @@ async function enviarDocumento() {
         alert("Falha ao enviar o arquivo");
     }
 }
+
+
 async function buscarDocumentos() {
     const codigoCliente = document.getElementById("codigoBusca").value;
 
@@ -54,7 +56,7 @@ async function buscarDocumentos() {
                 <td>${documento.extensao}</td>
                 <td>
                     <button onclick="baixarDocumento(${documento.id})">Baixar</button>
-                    <button>Excluir</button>
+                    <button onclick="excluirDocumento(${documento.id})">Excluir</button>
                 </td>`;
 
             tabela.appendChild(linha);
@@ -84,5 +86,22 @@ async function baixarDocumento(id) {
         window.URL.revokeObjectURL(url);
     } else {
         alert("Falha ao baixar o arquivo");
+    }
+}
+async function excluirDocumento(id) {
+    const confirmar = confirm("Deseja realmente excluir este documento?");
+
+    if (!confirmar) {
+        return;
+    }
+    const response = await fetch(`${URL_API}/excluir/${id}`, {
+        method: "DELETE"
+    });
+    if (response.ok) {
+        alert("Documento excluido com sucesso!");
+
+        buscarDocumentos();
+    } else {
+        alert("Falha ao excluir o documento");
     }
 }
