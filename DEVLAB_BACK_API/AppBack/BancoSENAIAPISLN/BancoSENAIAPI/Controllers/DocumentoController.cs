@@ -18,9 +18,9 @@ namespace BancoSENAIAPI.Controllers
         [HttpPost("upload/{codigoCliente}")]
         public async Task<IActionResult> AnexarArquivo(int codigoCliente, IFormFile arquivo)
         {
-            if (arquivo == null || arquivo.Length == 0)
+            if (arquivo.Length > 2 * 1024 * 1024)
             {
-                return BadRequest("Nenhum arquivo foi enviado.");
+                return BadRequest("O arquivo não pode ter mais de 2 MB.");
             }
             string pastaCliente = Path.Combine(_caminhoRaiz, codigoCliente.ToString());
             if (!Directory.Exists(pastaCliente))
@@ -28,6 +28,10 @@ namespace BancoSENAIAPI.Controllers
                 Directory.CreateDirectory(pastaCliente);
             }
             string extensao = Path.GetExtension(arquivo.FileName);
+            if (extensao != ".pdf" && extensao != ".jpg" && extensao != ".png")
+            {
+                return BadRequest("Extensão de arquivo não permitida. Use apenas .pdf, .jpg ou .png.");
+            }
 
             string nameOriginal = Path.GetFileNameWithoutExtension(arquivo.FileName);
             string novoNome = $"{codigoCliente}_{nameOriginal}_{Guid.NewGuid()}{extensao}";
@@ -41,12 +45,65 @@ namespace BancoSENAIAPI.Controllers
             {
                 Id = _nexId++,
                 Name = nameOriginal,
+                Extensao = extensao,
                 Caminho = caminhoFinal,
                 CodigoCliente = codigoCliente,
             };
             _documentosMetaDados.Add(documentoMetaDados);
             return Ok(new { mensagem = "Documento anexado com sucesso", arquivoSalvo = novoNome});
 
+        }
+        [HttpGet("listar/{codigoCliente}")]
+        public IActionResult ListarDocumentos(int codigoCliente)
+        {
+            var documentos = _documentosMetaDados
+                .Where(d => d.CodigoCliente == codigoCliente)
+                .ToList();
+
+            if (!documentos.Any())
+            {
+                return NotFound("Nenhum documento encontrado para este cliente.");
+            }
+
+            return Ok(documentos);
+        }
+        [HttpGet("download/{id}")]
+        public IActionResult Download(int id)
+        {
+            var documento = _documentosMetaDados
+                .FirstOrDefault(d => d.Id == id);
+
+            if (documento == null)
+            {
+                return NotFound("Documento não encontrado.");
+            }
+
+            byte[] fileBytes = System.IO.File.ReadAllBytes(documento.Caminho);
+
+            string nomeArquivo = documento.Name + documento.Extensao;
+
+            return File(
+                fileBytes,
+                "application/octet-stream",
+                nomeArquivo
+            );
+        }
+        [HttpDelete("excluir/{id}")]
+        public IActionResult Excluir(int id)
+        {
+            var documento = _documentosMetaDados
+                .FirstOrDefault(d => d.Id == id);
+
+            if (documento == null)
+            {
+                return NotFound("Documento não encontrado.");
+            }
+
+            System.IO.File.Delete(documento.Caminho);
+
+            _documentosMetaDados.Remove(documento);
+
+            return Ok("Documento excluído com sucesso.");
         }
     }
 }
