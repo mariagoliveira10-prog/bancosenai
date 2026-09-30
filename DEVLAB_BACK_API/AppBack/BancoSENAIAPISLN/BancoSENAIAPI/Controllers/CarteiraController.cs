@@ -1,5 +1,7 @@
-﻿using BancoSENAIAPI.Models;
+﻿using BancoSENAIAPI.Data;
+using BancoSENAIAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BancoSENAIAPI.Controllers
 {
@@ -7,21 +9,28 @@ namespace BancoSENAIAPI.Controllers
     [Route("api/v1/[controller]")]
     public class CarteiraController : ControllerBase
     {
-        private static List<Carteira> _carteiras = new List<Carteira>();
+        private readonly AppDbContext _context;
+
+        public CarteiraController(AppDbContext context)
+        {
+            _context = context;
+        }
 
         // Lista todas as carteiras cadastradas
         [HttpGet]
-        public IActionResult ListarTodas()
+        public async Task<IActionResult> ListarTodas()
         {
-            return Ok(_carteiras);
+            var carteiras = await _context.Carteiras.ToListAsync();
+
+            return Ok(carteiras);
         }
 
         // Cadastra uma nova carteira
         [HttpPost]
-        public IActionResult Cadastrar([FromBody] Carteira novaCarteira)
+        public async Task<IActionResult> Cadastrar([FromBody] Carteira novaCarteira)
         {
             // Verifica se o número da carteira já está cadastrado
-            if (_carteiras.Any(c => c.NumeroCarteira == novaCarteira.NumeroCarteira))
+            if (await _context.Carteiras.AnyAsync(c => c.NumeroCarteira == novaCarteira.NumeroCarteira))
                 return BadRequest(new
                 {
                     message = "Este número de carteira já existe."
@@ -38,18 +47,18 @@ namespace BancoSENAIAPI.Controllers
             if (novaCarteira.ApetiteCarteira == 0)
                 novaCarteira.ApetiteCarteira = 1000000;
 
-            _carteiras.Add(novaCarteira);
+            await _context.Carteiras.AddAsync(novaCarteira);
+            await _context.SaveChangesAsync();
 
             return Created("", novaCarteira);
         }
 
         // Consulta uma carteira pelo número
         [HttpGet("{numero}")]
-        public IActionResult ConsultarPorNumero(int numero)
+        public async Task<IActionResult> ConsultarPorNumero(int numero)
         {
-            var carteira = _carteiras.FirstOrDefault(
-                c => c.NumeroCarteira == numero
-            );
+            var carteira = await _context.Carteiras
+                .FirstOrDefaultAsync(c => c.NumeroCarteira == numero);
 
             if (carteira == null)
                 return NotFound(new
@@ -62,13 +71,12 @@ namespace BancoSENAIAPI.Controllers
 
         // Atualiza uma carteira existente
         [HttpPut("{numero}")]
-        public IActionResult Alterar(
+        public async Task<IActionResult> Alterar(
             int numero,
             [FromBody] Carteira carteiraAtualizada)
         {
-            var carteiraExistente = _carteiras.FirstOrDefault(
-                c => c.NumeroCarteira == numero
-            );
+            var carteiraExistente = await _context.Carteiras
+                .FirstOrDefaultAsync(c => c.NumeroCarteira == numero);
 
             if (carteiraExistente == null)
                 return NotFound(new
@@ -89,16 +97,17 @@ namespace BancoSENAIAPI.Controllers
             carteiraExistente.ApetiteCarteira =
                 carteiraAtualizada.ApetiteCarteira;
 
+            await _context.SaveChangesAsync();
+
             return NoContent();
         }
 
         // Exclui uma carteira
         [HttpDelete("{numero}")]
-        public IActionResult Excluir(int numero)
+        public async Task<IActionResult> Excluir(int numero)
         {
-            var carteira = _carteiras.FirstOrDefault(
-                c => c.NumeroCarteira == numero
-            );
+            var carteira = await _context.Carteiras
+                .FirstOrDefaultAsync(c => c.NumeroCarteira == numero);
 
             if (carteira == null)
                 return NotFound(new
@@ -106,7 +115,8 @@ namespace BancoSENAIAPI.Controllers
                     message = "Carteira não encontrada."
                 });
 
-            _carteiras.Remove(carteira);
+            _context.Carteiras.Remove(carteira);
+            await _context.SaveChangesAsync();
 
             return Ok(new
             {
@@ -115,8 +125,3 @@ namespace BancoSENAIAPI.Controllers
         }
     }
 }
-
-
-
-
-
